@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Trung Tâm Học Thêm</title>
+    <!-- Sử dụng Tailwind CSS cho giao diện -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Sử dụng Vue 3 để xử lý logic và dữ liệu -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- FontAwesome cho icon -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        /* Tùy chỉnh scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="app" class="flex h-screen overflow-hidden" v-cloak>
+        
+        <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-20">
+            <div class="p-6 flex items-center gap-3 border-b border-slate-800">
+                <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center text-xl font-bold shadow-lg shadow-blue-500/30">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight">EduCenter</h1>
+            </div>
+            
+            <nav class="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+                <button @click="currentTab = 'students'" :class="['w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200', currentTab === 'students' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white']">
+                    <i class="fas fa-users w-5 text-center"></i>
+                    <span class="font-medium">Quản lý Học Sinh</span>
+                </button>
+                <button @click="currentTab = 'attendance'" :class="['w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200', currentTab === 'attendance' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white']">
+                    <i class="fas fa-calendar-check w-5 text-center"></i>
+                    <span class="font-medium">Điểm Danh Ngày</span>
+                </button>
+                <button @click="currentTab = 'reports'" :class="['w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200', currentTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white']">
+                    <i class="fas fa-chart-line w-5 text-center"></i>
+                    <span class="font-medium">Báo Cáo Điểm Danh</span>
+                </button>
+            </nav>
+            
+            <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+                &copy; 2026 Quản Lý TT
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b border-slate-200 px-8 py-4 flex justify-between items-center z-10">
+                <h2 class="text-2xl font-bold text-slate-800">{{ tabTitle }}</h2>
+                <div class="text-sm text-slate-500 font-medium bg-slate-100 px-4 py-2 rounded-full flex items-center gap-2">
+                    <i class="far fa-clock"></i> Hôm nay: {{ todayFormatted }}
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-auto p-8 relative">
+                
+                <transition name="fade" mode="out-in">
+                    <div v-if="currentTab === 'students'" key="students" class="space-y-6">
+                        <!-- Thêm học sinh Form -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-user-plus text-blue-500"></i> Thêm Học Sinh Mới</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <!-- Form nhập tay -->
+                                <form @submit.prevent="addStudent" class="space-y-4">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">STT</label>
+                                            <input v-model="studentForm.stt" type="text" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Lớp</label>
+                                            <input v-model="studentForm.class" type="text" placeholder="VD: 10A1" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" required>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Họ và Tên</label>
+                                        <input v-model="studentForm.name" type="text" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" required>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Ngày sinh</label>
+                                            <input v-model="studentForm.dob" type="date" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Giới tính</label>
+                                            <select v-model="studentForm.gender" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                                                <option value="Nam">Nam</option>
+                                                <option value="Nữ">Nữ</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end pt-2">
+                                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-blue-500/30 flex items-center gap-2">
+                                            <i class="fas fa-plus"></i> Lưu Học Sinh
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <!-- Nhập từ Excel -->
+                                <div class="border-t lg:border-t-0 lg:border-l border-slate-200 pt-6 lg:pt-0 lg:pl-8 flex flex-col">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Nhập nhanh từ Excel (Copy & Paste)</label>
+                                        <span v-if="importSuccessMsg" class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-md">{{ importSuccessMsg }}</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 mb-3">Copy dữ liệu từ Excel theo thứ tự: <strong class="text-slate-700">STT | Lớp | Họ và Tên | Ngày sinh | Giới tính</strong> và dán vào ô bên dưới.</p>
+                                    <textarea v-model="bulkInput" rows="5" class="w-full flex-1 px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm font-mono whitespace-pre" placeholder="1&#9;10A1&#9;Nguyễn Văn A&#9;01/01/2010&#9;Nam..."></textarea>
+                                    <div class="flex justify-end mt-4">
+                                        <button @click="processBulkImport" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2">
+                                            <i class="fas fa-paste"></i> Nhập Danh Sách
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Danh sách học sinh -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+                                <h3 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-list text-blue-500"></i> Danh Sách Học Sinh ({{ students.length }})</h3>
+                                <div class="flex gap-3">
+                                    <select v-model="filterClass" class="px-4 py-2 rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium">
+                                        <option value="">Tất cả các lớp</option>
+                                        <option v-for="cls in uniqueClasses" :key="cls" :value="cls">Lớp {{ cls }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-500 text-xs uppercase tracking-wider font-semibold">
+                                            <th class="p-4 border-b">STT</th>
+                                            <th class="p-4 border-b">Họ và Tên</th>
+                                            <th class="p-4 border-b">Lớp</th>
+                                            <th class="p-4 border-b">Ngày Sinh</th>
+                                            <th class="p-4 border-b">Giới Tính</th>
+                                            <th class="p-4 border-b text-right">Thao Tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-sm divide-y divide-slate-100">
+                                        <tr v-if="filteredStudents.length === 0">
+                                            <td colspan="6" class="p-8 text-center text-slate-400">Chưa có dữ liệu học sinh.</td>
+                                        </tr>
+                                        <tr v-for="student in filteredStudents" :key="student.id" class="hover:bg-slate-50 transition-colors">
+                                            <td class="p-4 font-medium">{{ student.stt }}</td>
+                                            <td class="p-4 font-semibold text-slate-800">{{ student.name }}</td>
+                                            <td class="p-4"><span class="bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-bold">{{ student.class }}</span></td>
+                                            <td class="p-4">{{ formatDate(student.dob) }}</td>
+                                            <td class="p-4">
+                                                <i :class="student.gender === 'Nam' ? 'fas fa-mars text-blue-500' : 'fas fa-venus text-pink-500'"></i> {{ student.gender }}
+                                            </td>
+                                            <td class="p-4 text-right">
+                                                <button @click="confirmDelete(student.id)" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else-if="currentTab === 'attendance'" key="attendance" class="space-y-6">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-wrap gap-4 items-end bg-gradient-to-r from-blue-50 to-indigo-50">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Ngày Điểm Danh</label>
+                                <input type="date" v-model="attDate" class="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Chọn Lớp</label>
+                                <select v-model="attClass" class="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none min-w-[150px] shadow-sm">
+                                    <option v-for="cls in uniqueClasses" :key="cls" :value="cls">Lớp {{ cls }}</option>
+                                    <option v-if="uniqueClasses.length === 0" value="" disabled>Chưa có lớp</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Môn Học</label>
+                                <select v-model="attSubject" class="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none min-w-[150px] shadow-sm">
+                                    <option v-for="sub in subjects" :key="sub" :value="sub">{{ sub }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="p-4 bg-slate-100 border-b flex justify-between items-center">
+                                <h3 class="font-bold text-slate-700">Danh sách học sinh lớp <span class="text-blue-600">{{ attClass || '...' }}</span> - Môn <span class="text-indigo-600">{{ attSubject }}</span></h3>
+                                <div class="text-sm text-slate-500">
+                                    Tổng: <span class="font-bold text-slate-800">{{ attStudents.length }}</span> HS | 
+                                    Có mặt: <span class="font-bold text-green-600">{{ countPresent }}</span>
+                                </div>
+                            </div>
+                            <div v-if="!attClass" class="p-12 text-center text-slate-400">
+                                <i class="fas fa-hand-pointer text-4xl mb-3 opacity-50"></i>
+                                <p>Vui lòng chọn lớp để điểm danh.</p>
+                            </div>
+                            <div v-else class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b">
+                                            <th class="p-4 w-20">STT</th>
+                                            <th class="p-4 w-1/3">Họ và Tên</th>
+                                            <th class="p-4">Trạng Thái</th>
+                                            <th class="p-4 text-center">Thao Tác Nhanh</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-sm divide-y divide-slate-100">
+                                        <tr v-if="attStudents.length === 0">
+                                            <td colspan="4" class="p-8 text-center text-slate-400">Không có học sinh nào trong lớp này.</td>
+                                        </tr>
+                                        <tr v-for="student in attStudents" :key="student.id" class="hover:bg-slate-50 transition-colors" :class="{'bg-green-50/30': isPresent(student.id)}">
+                                            <td class="p-4 font-medium">{{ student.stt }}</td>
+                                            <td class="p-4 font-semibold text-slate-800">{{ student.name }}</td>
+                                            <td class="p-4">
+                                                <span v-if="isPresent(student.id)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                                                    <i class="fas fa-check-circle"></i> Có mặt
+                                                </span>
+                                                <span v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                                                    <i class="fas fa-times-circle"></i> Vắng mặt
+                                                </span>
+                                            </td>
+                                            <td class="p-4 text-center">
+                                                <!-- Toggle Switch -->
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" class="sr-only peer" :checked="isPresent(student.id)" @change="toggleAttendance(student.id)">
+                                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                                </label>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else-if="currentTab === 'reports'" key="reports" class="space-y-6">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-wrap gap-4 items-end bg-gradient-to-r from-slate-50 to-blue-50">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Tháng Tổng Hợp</label>
+                                <input type="month" v-model="reportMonth" class="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Chọn Lớp</label>
+                                <select v-model="reportClass" class="px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none min-w-[150px] shadow-sm">
+                                    <option v-for="cls in uniqueClasses" :key="cls" :value="cls">Lớp {{ cls }}</option>
+                                </select>
+                            </div>
+                            <div class="ml-auto flex gap-3">
+                                <button @click="exportCSV" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-emerald-500/30 flex items-center gap-2">
+                                    <i class="fas fa-file-excel"></i> Xuất Excel (CSV)
+                                </button>
+                                <button @click="printReport" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-indigo-500/30 flex items-center gap-2">
+                                    <i class="fas fa-print"></i> In Báo Cáo
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" id="reportArea">
+                            <div class="p-6 border-b text-center">
+                                <h3 class="text-xl font-bold text-slate-800 uppercase">Bảng Tổng Hợp Điểm Danh</h3>
+                                <p class="text-slate-500 mt-1">Lớp: <span class="font-bold text-blue-600">{{ reportClass || '...' }}</span> - Tháng: <span class="font-bold text-blue-600">{{ reportMonth }}</span></p>
+                            </div>
+                            <div v-if="!reportClass" class="p-12 text-center text-slate-400">
+                                Vui lòng chọn lớp để xem báo cáo.
+                            </div>
+                            <div v-else class="overflow-x-auto p-1">
+                                <table class="w-full text-left border-collapse border border-slate-200">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-700 text-xs uppercase tracking-wider font-bold">
+                                            <th class="p-3 border border-slate-200 text-center w-12">STT</th>
+                                            <th class="p-3 border border-slate-200 min-w-[180px]">Họ và Tên</th>
+                                            <th v-for="sub in subjects" :key="sub" class="p-3 border border-slate-200 text-center min-w-[120px]">
+                                                {{ sub }} (Số buổi)
+                                            </th>
+                                            <th class="p-3 border border-slate-200 text-center bg-blue-50 text-blue-800 w-32">Tổng Buổi Học</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-sm divide-y divide-slate-200">
+                                        <tr v-if="reportData.length === 0">
+                                            <td :colspan="subjects.length + 3" class="p-8 text-center text-slate-400">Không có học sinh trong lớp này.</td>
+                                        </tr>
+                                        <tr v-for="item in reportData" :key="item.student.id" class="hover:bg-slate-50">
+                                            <td class="p-3 border border-slate-200 text-center text-slate-500">{{ item.student.stt }}</td>
+                                            <td class="p-3 border border-slate-200 font-bold text-slate-800">{{ item.student.name }}</td>
+                                            
+                                            <!-- Sub columns -->
+                                            <td v-for="sub in subjects" :key="sub" class="p-3 border border-slate-200 text-center">
+                                                <div v-if="item.details[sub].count > 0">
+                                                    <span class="font-bold text-slate-700">{{ item.details[sub].count }}</span>
+                                                </div>
+                                                <div v-else class="text-slate-300">-</div>
+                                            </td>
+
+                                            <td class="p-3 border border-slate-200 text-center font-bold text-blue-700 bg-blue-50/30 text-base">
+                                                {{ item.totalSessions }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot class="bg-slate-100 font-bold text-slate-800">
+                                        <tr>
+                                            <td colspan="2" class="p-4 border border-slate-200 text-right uppercase">Tổng Số Buổi Toàn Lớp:</td>
+                                            <td v-for="sub in subjects" :key="sub" class="p-4 border border-slate-200 text-center text-indigo-700">
+                                                {{ classTotals.bySubject[sub] }}
+                                            </td>
+                                            <td class="p-4 border border-slate-200 text-center text-blue-700 text-lg">
+                                                {{ classTotals.totalSessions }}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
+
+                <!-- Custom Confirm Modal -->
+                <div v-if="modal.show" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform scale-100 transition-all">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-800 mb-2">{{ modal.title }}</h3>
+                            <p class="text-sm text-slate-500 mb-6">{{ modal.message }}</p>
+                            <div class="flex gap-3 justify-center">
+                                <button @click="modal.show = false" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium transition">Hủy bỏ</button>
+                                <button @click="executeModalAction" class="px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 font-medium shadow-lg shadow-red-500/30 transition">Đồng ý xóa</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                // Trạng thái chung
+                const currentTab = ref('students');
+                const subjects = ['Toán', 'Văn', 'Anh', 'KHTN'];
+                
+                // Dữ liệu chính
+                const students = ref([]);
+                const attendance = ref({}); // Cấu trúc: { "YYYY-MM-DD_class_subject": [studentId1, studentId2] }
+                
+                // Form dữ liệu
+                const studentForm = reactive({
+                    stt: '',
+                    name: '',
+                    class: '',
+                    dob: '',
+                    gender: 'Nam'
+                });
+
+                const bulkInput = ref('');
+                const importSuccessMsg = ref('');
+
+                // Bộ lọc & Lựa chọn
+                const filterClass = ref('');
+                
+                const today = new Date();
+                const todayString = today.toISOString().split('T')[0];
+                const currentMonthString = todayString.substring(0, 7); // YYYY-MM
+
+                const attDate = ref(todayString);
+                const attClass = ref('');
+                const attSubject = ref(subjects[0]);
+                
+                const reportMonth = ref(currentMonthString);
+                const reportClass = ref('');
+
+                // Modal xác nhận
+                const modal = reactive({
+                    show: false,
+                    title: '',
+                    message: '',
+                    action: null
+                });
+
+                // --- TẢI & LƯU DỮ LIỆU TỪ LOCAL STORAGE ---
+                onMounted(() => {
+                    const savedStudents = localStorage.getItem('edu_students');
+                    if (savedStudents) students.value = JSON.parse(savedStudents);
+
+                    const savedAttendance = localStorage.getItem('edu_attendance');
+                    if (savedAttendance) attendance.value = JSON.parse(savedAttendance);
+
+                    // Tự động set lớp đầu tiên làm mặc định nếu có
+                    if (uniqueClasses.value.length > 0) {
+                        attClass.value = uniqueClasses.value[0];
+                        reportClass.value = uniqueClasses.value[0];
+                    }
+                });
+
+                watch(students, (newVal) => localStorage.setItem('edu_students', JSON.stringify(newVal)), { deep: true });
+                watch(attendance, (newVal) => localStorage.setItem('edu_attendance', JSON.stringify(newVal)), { deep: true });
+
+                // --- COMPUTED PROPERTIES ---
+                const tabTitle = computed(() => {
+                    const titles = {
+                        'students': 'Quản Lý Học Sinh',
+                        'attendance': 'Điểm Danh Hàng Ngày',
+                        'reports': 'Báo Cáo Điểm Danh'
+                    };
+                    return titles[currentTab.value];
+                });
+
+                const todayFormatted = computed(() => {
+                    return new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                });
+
+                const uniqueClasses = computed(() => {
+                    const classes = students.value.map(s => s.class);
+                    return [...new Set(classes)].sort();
+                });
+
+                const filteredStudents = computed(() => {
+                    let res = students.value;
+                    if (filterClass.value) {
+                        res = res.filter(s => s.class === filterClass.value);
+                    }
+                    // Sort by class then STT (numeric if possible)
+                    return res.sort((a, b) => {
+                        if (a.class === b.class) {
+                            return parseInt(a.stt) - parseInt(b.stt) || a.stt.localeCompare(b.stt);
+                        }
+                        return a.class.localeCompare(b.class);
+                    });
+                });
+
+                // --- MODULE: HỌC SINH ---
+                const addStudent = () => {
+                    if (!studentForm.name || !studentForm.class) return;
+                    students.value.push({
+                        id: Date.now().toString(),
+                        stt: studentForm.stt,
+                        name: studentForm.name,
+                        class: studentForm.class.trim(),
+                        dob: studentForm.dob,
+                        gender: studentForm.gender
+                    });
+                    
+                    // Reset form but keep class to add multiple quickly
+                    studentForm.stt = (parseInt(studentForm.stt) + 1).toString() || '';
+                    studentForm.name = '';
+                    studentForm.dob = '';
+                    
+                    // Update dropdowns if new class added
+                    if (!attClass.value) attClass.value = studentForm.class;
+                    if (!reportClass.value) reportClass.value = studentForm.class;
+                };
+
+                const confirmDelete = (id) => {
+                    modal.title = 'Xác nhận xóa';
+                    modal.message = 'Bạn có chắc chắn muốn xóa học sinh này? Toàn bộ dữ liệu điểm danh của học sinh cũng sẽ không còn hiển thị.';
+                    modal.action = () => {
+                        students.value = students.value.filter(s => s.id !== id);
+                        modal.show = false;
+                    };
+                    modal.show = true;
+                };
+
+                const executeModalAction = () => {
+                    if (typeof modal.action === 'function') {
+                        modal.action();
+                    }
+                };
+
+                // --- MODULE: NHẬP EXCEL HÀNG LOẠT ---
+                const processBulkImport = () => {
+                    if (!bulkInput.value.trim()) return;
+                    
+                    const lines = bulkInput.value.trim().split('\n');
+                    let count = 0;
+                    
+                    lines.forEach(line => {
+                        // Tách theo tab (mặc định khi copy từ các ô Excel)
+                        const parts = line.split('\t');
+                        
+                        if (parts.length >= 3) { // Phải có ít nhất STT, Lớp, Họ Tên
+                            const stt = parts[0]?.trim();
+                            const cls = parts[1]?.trim();
+                            const name = parts[2]?.trim();
+                            
+                            if (stt && cls && name) {
+                                // Format lại ngày sinh nếu dạng DD/MM/YYYY
+                                let dob = parts[3]?.trim() || '';
+                                if (dob.includes('/')) {
+                                    const dParts = dob.split('/');
+                                    if(dParts.length === 3) {
+                                        dob = `${dParts[2]}-${dParts[1].padStart(2, '0')}-${dParts[0].padStart(2, '0')}`;
+                                    }
+                                }
+
+                                const gender = parts[4]?.trim() || 'Nam';
+
+                                students.value.push({
+                                    id: Date.now().toString() + Math.random().toString(36).substring(2, 7),
+                                    stt: stt,
+                                    name: name,
+                                    class: cls,
+                                    dob: dob,
+                                    gender: gender
+                                });
+                                count++;
+                            }
+                        }
+                    });
+                    
+                    if (count > 0) {
+                        bulkInput.value = '';
+                        importSuccessMsg.value = `Đã thêm ${count} HS!`;
+                        setTimeout(() => { importSuccessMsg.value = ''; }, 3000);
+                        
+                        // Cập nhật lại select box
+                        if (!attClass.value && uniqueClasses.value.length > 0) attClass.value = uniqueClasses.value[0];
+                        if (!reportClass.value && uniqueClasses.value.length > 0) reportClass.value = uniqueClasses.value[0];
+                    } else {
+                        modal.title = 'Lỗi nhập liệu';
+                        modal.message = 'Không tìm thấy dữ liệu hợp lệ. Vui lòng đảm bảo copy đúng các cột từ Excel (phân cách bằng Tab).';
+                        modal.action = () => { modal.show = false; };
+                        modal.show = true;
+                    }
+                };
+
+                // --- MODULE: ĐIỂM DANH ---
+                const attKey = computed(() => `${attDate.value}_${attClass.value}_${attSubject.value}`);
+                
+                const attStudents = computed(() => {
+                    if (!attClass.value) return [];
+                    return students.value
+                        .filter(s => s.class === attClass.value)
+                        .sort((a, b) => parseInt(a.stt) - parseInt(b.stt));
+                });
+
+                const isPresent = (studentId) => {
+                    const record = attendance.value[attKey.value];
+                    return record ? record.includes(studentId) : false;
+                };
+
+                const countPresent = computed(() => {
+                    const record = attendance.value[attKey.value];
+                    return record ? record.length : 0;
+                });
+
+                const toggleAttendance = (studentId) => {
+                    if (!attendance.value[attKey.value]) {
+                        attendance.value[attKey.value] = [];
+                    }
+                    
+                    const record = attendance.value[attKey.value];
+                    const index = record.indexOf(studentId);
+                    
+                    if (index > -1) {
+                        record.splice(index, 1);
+                    } else {
+                        record.push(studentId);
+                    }
+                };
+
+                // --- MODULE: BÁO CÁO ---
+                const reportData = computed(() => {
+                    if (!reportClass.value || !reportMonth.value) return [];
+                    
+                    const targetStudents = students.value.filter(s => s.class === reportClass.value).sort((a, b) => parseInt(a.stt) - parseInt(b.stt));
+                    const data = [];
+
+                    // Tìm tất cả record điểm danh trong tháng đó cho lớp đó
+                    const monthPrefix = reportMonth.value; // YYYY-MM
+                    
+                    targetStudents.forEach(student => {
+                        const studentReport = {
+                            student: student,
+                            details: {},
+                            totalSessions: 0
+                        };
+
+                        subjects.forEach(sub => {
+                            let attendedSessions = 0;
+                            let attendedDates = []; // Thêm mảng lưu chi tiết ngày có mặt
+                            
+                            Object.keys(attendance.value).forEach(attK => {
+                                if (attK.startsWith(monthPrefix) && attK.includes(`_${reportClass.value}_${sub}`)) {
+                                    if (attendance.value[attK].includes(student.id)) {
+                                        attendedSessions++;
+                                        const datePart = attK.split('_')[0]; // Lấy YYYY-MM-DD
+                                        const d = new Date(datePart);
+                                        attendedDates.push(`${d.getDate()}/${d.getMonth()+1}`);
+                                    }
+                                }
+                            });
+
+                            studentReport.details[sub] = {
+                                count: attendedSessions,
+                                dates: attendedDates.sort((a, b) => {
+                                    const [d1, m1] = a.split('/');
+                                    const [d2, m2] = b.split('/');
+                                    return new Date(2020, m1-1, d1) - new Date(2020, m2-1, d2);
+                                })
+                            };
+                            
+                            studentReport.totalSessions += attendedSessions;
+                        });
+
+                        data.push(studentReport);
+                    });
+
+                    return data;
+                });
+
+                const classTotals = computed(() => {
+                    const totals = { bySubject: {}, totalSessions: 0 };
+                    subjects.forEach(sub => totals.bySubject[sub] = 0);
+
+                    reportData.value.forEach(item => {
+                        subjects.forEach(sub => {
+                            totals.bySubject[sub] += item.details[sub].count;
+                        });
+                        totals.totalSessions += item.totalSessions;
+                    });
+                    
+                    return totals;
+                });
+
+                const printReport = () => {
+                    window.print();
+                };
+
+                const exportCSV = () => {
+                    if (!reportClass.value || reportData.value.length === 0) {
+                        modal.title = 'Thông báo';
+                        modal.message = 'Không có dữ liệu để xuất file. Vui lòng chọn lớp có dữ liệu.';
+                        modal.action = () => { modal.show = false; };
+                        modal.show = true;
+                        return;
+                    }
+
+                    let csvContent = "\uFEFF"; // Thêm BOM để Excel đọc đúng tiếng Việt UTF-8
+                    csvContent += `BÁO CÁO TỔNG HỢP VÀ CHI TIẾT ĐIỂM DANH, THÁNG: ${reportMonth.value}, LỚP: ${reportClass.value}\n\n`;
+                    
+                    // Tạo Header
+                    let headers = ['STT', 'Họ và Tên'];
+                    subjects.forEach(sub => {
+                        headers.push(`Tổng ${sub}`);
+                        headers.push(`Chi Tiết Ngày (${sub})`);
+                    });
+                    headers.push('Tổng Buổi Học');
+                    csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
+
+                    // Tạo Dòng Dữ liệu
+                    reportData.value.forEach(item => {
+                        let row = [
+                            item.student.stt,
+                            `"${item.student.name}"`
+                        ];
+                        subjects.forEach(sub => {
+                            row.push(item.details[sub].count);
+                            row.push(`"${item.details[sub].dates.join(', ')}"`);
+                        });
+                        row.push(item.totalSessions);
+                        csvContent += row.join(',') + '\n';
+                    });
+
+                    // Tạo dòng Tổng
+                    let footerRow = ['"Tổng:"', '"Toàn Lớp"'];
+                    subjects.forEach(sub => {
+                        footerRow.push(classTotals.value.bySubject[sub]);
+                        footerRow.push('""'); // Cột chi tiết để trống
+                    });
+                    footerRow.push(classTotals.value.totalSessions);
+                    csvContent += footerRow.join(',') + '\n';
+
+                    // Xử lý tải file
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement("a");
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", `Bao_Cao_Diem_Danh_${reportClass.value}_Thang_${reportMonth.value}.csv`);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+
+                // Utilities
+                const formatDate = (dateStr) => {
+                    if (!dateStr) return '---';
+                    const [y, m, d] = dateStr.split('-');
+                    return `${d}/${m}/${y}`;
+                };
+
+                return {
+                    currentTab, tabTitle, todayFormatted, subjects,
+                    students, attendance, studentForm, bulkInput, importSuccessMsg,
+                    filterClass, uniqueClasses, filteredStudents, addStudent, processBulkImport,
+                    attDate, attClass, attSubject, attStudents, isPresent, countPresent, toggleAttendance,
+                    reportMonth, reportClass, reportData, classTotals, printReport, exportCSV,
+                    formatDate,
+                    modal, confirmDelete, executeModalAction
+                };
+            }
+        }).mount('#app');
+    </script>
+    
+    <!-- CSS Tùy chỉnh cho chức năng in -->
+    <style>
+        @media print {
+            aside, header, button, select, input[type="month"] { display: none !important; }
+            main, #app { height: auto !important; overflow: visible !important; background: white !important; }
+            .p-8 { padding: 0 !important; }
+            .shadow-sm { box-shadow: none !important; }
+            .border-slate-200 { border-color: #000 !important; }
+            body { font-size: 12pt; }
+            #reportArea { border: none !important; }
+            table { border-collapse: collapse !important; }
+            th, td { border: 1px solid #000 !important; }
+            .bg-blue-50, .bg-slate-100 { background: #fff !important; color: #000 !important; }
+        }
+    </style>
+</body>
+</html>
